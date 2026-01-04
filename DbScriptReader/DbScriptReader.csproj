@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IncludeSymbols>true</IncludeSymbols>
+		<LangVersion>11</LangVersion>
+		<Nullable>enable</Nullable>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<Version>0.0.0-rc-05</Version>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Files\Template.txt" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Dapper" Version="2.0.123" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Take a private dependency. Consumers of this analyzer will not reference it. -->
+		<PackageReference Include="Scriban" Version="5.12.1" PrivateAssets="all" GeneratePathProperty="true" />
+
+		<!-- Package the analyzer in the analyzers directory of the nuget package. -->
+		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
+		<!-- Package the dependency alongside the analyzer assembly. -->
+		<None Include="$(PkgScriban)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+	</ItemGroup>
+
+</Project>
