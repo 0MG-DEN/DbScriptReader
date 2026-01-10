@@ -1,19 +1,14 @@
 # Introduction
 
-**DbScriptReader** is an attempt at writing a custom Roslyn source generator.
-The main purpose of this generator is to extend classes that wrap some `IDbConnection`
-with methods that would read external script files and execute them via `Dapper` extensions.
+**DbScriptReader** is a custom Roslyn source generator. Its primary purpose is to extend classes that wrap an `IDbConnection` with methods that read external SQL script files and execute them using [Dapper](https://github.com/DapperLib/Dapper) extensions.
 
 # Problem
 
-When migrating a data analysis project from PostgreSQL to ClickHouse we observed a lack
-of some features, i.e. user defined table valued functions. Furthermore currenlty ClickHouse
-does [not allow](https://github.com/ClickHouse/ClickHouse/issues/61608) multiqueries over its API.
+When migrating a data analysis project from PostgreSQL to ClickHouse, we observed a lack of certain features, such as user-defined table-valued functions. Furthermore, ClickHouse currently does not allow multi-statement queries over its standard API. See [this](https://github.com/ClickHouse/ClickHouse/issues/61608) issue.
 
 # Solution
 
-To mitigate the problems above we would place each SQL query in a
-separate file and write something like the following methods:
+To address this, we would place each SQL query in a separate file. This led to writing boilerplate code like the following:
 ```csharp
 public abstract class DbConnectionBase
 {
@@ -42,35 +37,35 @@ public class DbConnectionClickHouse : DbConnectionBase
         _ = Execute(query);
     }
 
-    private IEnumrable<DataModel1> QueryData1(string table)
+    private IEnumerable<DataModel1> QueryData1(string table)
     {
         var text = File.ReadAllText("Scripts/Data1.sql");
-        var query = string.Format(text, name);
+        var query = string.Format(text, table);
         return Query<DataModel1>(query);
     }
 
-    private IEnumrable<DataModel2> QueryData2(string table)
+    private IEnumerable<DataModel2> QueryData2(string table)
     {
         var text = File.ReadAllText("Scripts/Data2.sql");
-        var query = string.Format(text, name);
+        var query = string.Format(text, table);
         return Query<DataModel2>(query);
     }
 
-    // Final method that would combine all the data.
+    // Final method that combines all the data.
     public IEnumerable<ReportModel> GetReport()
     {
         var tables = CreateTempTables();
         var data1 = QueryData1(tables[0]);
         var data2 = QueryData2(tables[1]);
         DropTempTables(tables);
-        // ...
+        // Additional logic.
     }
 }
 ```
 
 # Source Generator
 
-Implemented source generator would simplify adding these methods as following:
+The implemented source generator significantly simplifies adding these methods. You only need to declare partial methods with an attribute pointing to the SQL file:
 ```csharp
 public class DbConnectionClickHouse : DbConnectionBase, IDbScriptReader
 {
@@ -92,19 +87,17 @@ public class DbConnectionClickHouse : DbConnectionBase, IDbScriptReader
     public (IDbConnection Connection, bool Dispose) GetConnection()
         => (Connection, false);
 
-    // Final method that would combine all the data.
+    // Final method that combines all the data.
     public IEnumerable<ReportModel> GetReport()
     {
         var tables = QueryCreateTempTables<string>().ToArray();
         var data1 = QueryData1(tables[0]);
         var data2 = QueryData2(tables[1]);
         _ = ExecuteDropTempTables(tables);
-        // ...
+        // Additional logic.
     }
 }
 ```
-Note that `Query*` and `Execute*` methods are auto-generated.\
-See [template](DbScriptReader/Files/Template.txt) for a full list of such methods.
+Note that the actual `Query*` and `Execute*` methods (like `QueryCreateTempTables`, `QueryData1`, and `ExecuteDropTempTables`) are auto-generated. See the [template](DbScriptReader/Files/Template.txt) for a full list of such methods.
 
-Unfortunately this source generator didn't get a production
-version so I decided to implement it as a pet project.
+This source generator did not reach a production version in its original context, so I decided to implement it as a personal project.
