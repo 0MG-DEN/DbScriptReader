@@ -2,6 +2,8 @@
 
 **DbScriptReader** is a custom Roslyn source generator. Its primary purpose is to extend classes that wrap an `IDbConnection` with methods that read external SQL script files and execute them using [Dapper](https://github.com/DapperLib/Dapper) extensions.
 
+This is a publish-ready solution. Simply build the Release configuration and then either push the package to your private NuGet repository or copy it to your local NuGet folder.
+
 # Problem
 
 When migrating a data analysis project from PostgreSQL to ClickHouse, we observed a lack of certain features, such as user-defined table-valued functions. Furthermore, ClickHouse currently does not allow multi-statement queries over its standard API. See [this](https://github.com/ClickHouse/ClickHouse/issues/61608) issue.
